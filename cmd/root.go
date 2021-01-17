@@ -1,18 +1,21 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/alihacks/sqlrun/common"
 	"github.com/spf13/cobra"
-
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
 )
 
-var (
+/*var (
 	cfgFile    string
 	serverName string
+)*/
+
+var (
+	runConfig common.SqlRunConfig
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -20,8 +23,15 @@ var rootCmd = &cobra.Command{
 	Use:   "sqlrun",
 	Short: "Executes sql commands",
 	Long:  `TODO: Describe details`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("We are here with" + serverName)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if "" == runConfig.ServerName {
+			return errors.New("Server is required")
+		}
+		if "" == runConfig.Query {
+			return errors.New("Query is required")
+		}
+		return common.RunSql(runConfig)
+		return nil
 	},
 }
 
@@ -35,12 +45,19 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	//cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringVarP(&serverName, "server", "S", "", "server name")
+	rootCmd.PersistentFlags().StringVarP(&runConfig.ServerName, "server", "S", "", "DNS name / ip of server")
+	rootCmd.PersistentFlags().Uint16VarP(&runConfig.Port, "port", "p", 0, "port of server if non standard")
+
+	rootCmd.PersistentFlags().StringVarP(&runConfig.UserName, "username", "U", "", "username if not using integrated authentication")
+	rootCmd.PersistentFlags().StringVarP(&runConfig.Password, "password", "P", "", "password")
+	rootCmd.PersistentFlags().StringVarP(&runConfig.Database, "database", "d", "", "database name")
+
+	rootCmd.PersistentFlags().StringVarP(&runConfig.Query, "query", "q", "", "SQL Query to execute")
 
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sqlrun.yaml)")
 
@@ -50,6 +67,7 @@ func init() {
 }
 
 // initConfig reads in config file and ENV variables if set.
+/*
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -74,3 +92,4 @@ func initConfig() {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
+*/
